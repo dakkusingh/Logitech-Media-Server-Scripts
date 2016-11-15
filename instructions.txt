@@ -1,0 +1,36 @@
+modify the /etc/init.d/
+
+to start the script
+
+      if [ "$PLAYERCONNECTED" == "1" ]
+      then
+        # connected
+      
+        # First send power-on command to squeezebox server
+        echo "Sending power on command for player ${SL_NAME} (${SL_MAC_ADDRESS}) to Squeezebox server (${SB_SERVER_IP} ${SB_SERVER_CLI_PORT})"
+        printf "$SL_MAC_ADDRESS power 1\nexit\n" | nc $SB_SERVER_IP $SB_SERVER_CLI_PORT > /dev/null
+      
+        # check if auto play is set
+        if [ ! -z "$SL_AUTO_PLAY" ] && [ "${SL_AUTO_PLAY^^}" == "YES" ]; then
+          do_play
+          #start-stop-daemon --start --quiet --make-pidfile --pidfile /var/run/test.pid -background --exec python /home/pi/test.py
+        fi
+        start-stop-daemon --start --quiet --make-pidfile --pidfile /var/run/test.pid -background --startas /home/pi/test.py
+      else
+        echo "Could not send play command to player $SL_NAME on Squeezebox server $SB_SERVER_IP" 
+      fi
+      
+      
+to stop the script
+
+
+do_stop()
+{
+    # First send power-off command to squeezebox server, can only be done if Squeezebox server IP is set
+    if  [ ! -z "$SB_SERVER_IP" ]; then
+      echo "Sending power off command for player ${SL_NAME} (${SL_MAC_ADDRESS}) to Squeezebox server (${SB_SERVER_IP} ${SB_SERVER_CLI_PORT})"
+      printf "$SL_MAC_ADDRESS power 0\nexit\n" | nc $SB_SERVER_IP $SB_SERVER_CLI_PORT > /dev/null
+      start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile /var/run/test.pid --exec /home/pi/test.py
+    fi
+      
+      
